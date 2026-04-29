@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LearnIO - The ultimate learning platform for students. Enhance your learning experience with AI-powered tools.">
+    <title>LearnIO | Empowering Students to Achieve More</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">Learn<span>IO</span></div>
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#about">How it Works</a>
+            <a href="#testimonials">Testimonials</a>
+        </nav>
+        <div class="nav-actions">
+            <a href="#" class="btn-secondary">Log In</a>
+            <a href="#" class="btn-primary">Get Started</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <div class="badge">✨ AI-Powered Learning</div>
+                <h1>Supercharge Your <span class="gradient-text">Study Sessions</span></h1>
+                <p>LearnIO is the smart platform built for students. Summarize texts, organize notes, and master subjects faster than ever before.</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn-primary btn-large">Start for Free</a>
+                    <a href="#" class="btn-outline btn-large">View Demo</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <!-- A decorative glassmorphism element instead of an image to look premium -->
+                <div class="glass-card">
+                    <div class="glass-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="glass-body">
+                        <div class="skeleton-line full"></div>
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-line short"></div>
+                        <div class="glow-orb"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="summarizer" class="summarizer-section">
+            <div class="summarizer-container glass-card-large">
+                <div class="summarizer-header">
+                    <h2>AI Text Summarizer</h2>
+                    <p>Paste your notes, articles, or text below to get an instant summary.</p>
+                </div>
+                
+                <div class="summarizer-grid">
+                    <div class="input-area">
+                        <textarea id="inputText" placeholder="Enter text to summarize here..."></textarea>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="summarizeBtn" class="btn-primary btn-large w-100">
+                            <span id="btnText">Summarize Text</span>
+                            <div id="loadingSpinner" class="spinner hidden"></div>
+                        </button>
+                    </div>
+                    
+                    <div class="output-area">
+                        <div id="outputPlaceholder" class="placeholder-content">
+                            <div class="feature-icon">✨</div>
+                            <p>Your summary will appear here</p>
+                        </div>
+                        <div id="outputTextContainer" class="hidden">
+                            <h3>Summary</h3>
+                            <p id="outputText"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <h2>Why Students Love LearnIO</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Smart Summaries</h3>
+                    <p>Paste any text and get instant, accurate summaries to save hours of reading.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Adaptive Quizzes</h3>
+                    <p>Test your knowledge with auto-generated quizzes based on your study material.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Track Progress</h3>
+                    <p>Visualize your learning journey and stay motivated with detailed analytics.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const inputText = document.getElementById('inputText');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const outputPlaceholder = document.getElementById('outputPlaceholder');
+        const outputTextContainer = document.getElementById('outputTextContainer');
+        const outputText = document.getElementById('outputText');
+
+        summarizeBtn.addEventListener('click', async () => {
+            const text = inputText.value.trim();
+            if (!text) {
+                alert('Please enter some text to summarize.');
+                return;
+            }
+
+            // Show loading state
+            btnText.textContent = 'Summarizing...';
+            loadingSpinner.classList.remove('hidden');
+            summarizeBtn.disabled = true;
+
+            try {
+                const response = await fetch('/summarize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ dialogue: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                // Show result
+                outputPlaceholder.classList.add('hidden');
+                outputTextContainer.classList.remove('hidden');
+                outputText.textContent = data.summary;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while summarizing the text. Please try again.');
+            } finally {
+                // Reset loading state
+                btnText.textContent = 'Summarize Text';
+                loadingSpinner.classList.add('hidden');
+                summarizeBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

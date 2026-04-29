@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# MacOS
+.DS_Store
+
+# Data files
+*.csv
+*.tsv
+results/
+
+# Deep Learning Models
+saved_summary_model/
+*.pt
+*.pth
+*.bin
+*.h5
+
+# FastAPI / Python
+*.log
+.pytest_cache/
