@@ -1,0 +1,19 @@
+Artificial Intelligence (AI) is a branch of computer science focused on building systems that can perform tasks that typically require human intelligence. These tasks include learning, reasoning, problem-solving, perception, and language understanding.
+
+Machine Learning (ML) is a subset of AI that allows systems to learn from data rather than being explicitly programmed. Common types of machine learning include supervised learning, unsupervised learning, and reinforcement learning.
+
+Deep Learning is a further subset of machine learning that uses neural networks with many layers. These models are particularly powerful for tasks such as image recognition, speech processing, and natural language processing.
+
+Cricket is a popular sport played between two teams of eleven players. It is especially popular in countries like India, Australia, and England. The game involves batting, bowling, and fielding.
+
+The solar system consists of the Sun and the objects that orbit it, including planets, moons, asteroids, and comets. Earth is the third planet from the Sun and the only known planet to support life.
+
+Data structures are ways of organizing and storing data so that they can be accessed and modified efficiently. Common data structures include arrays, linked lists, stacks, queues, and trees.
+
+A vector database is used to store embeddings, which are numerical representations of data. These embeddings allow for similarity search, which is essential in applications like recommendation systems and RAG pipelines.
+
+Retrieval-Augmented Generation (RAG) is a technique that combines retrieval of relevant documents with text generation. It improves the accuracy of responses by providing context to language models.
+
+Python is a popular programming language known for its simplicity and readability. It is widely used in web development, data science, artificial intelligence, and automation.
+
+Neural networks are computational models inspired by the human brain. They consist of layers of interconnected nodes (neurons) that process information.

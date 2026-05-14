@@ -11,6 +11,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+rag-py311/
+rag-py311-conda-backup/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -18,6 +20,9 @@ venv.bak/
 
 # MacOS
 .DS_Store
+
+# Local workspace helpers
+anaconda_projects/
 
 # Data files
 *.csv

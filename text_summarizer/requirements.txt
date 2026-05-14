@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+jinja2
+pydantic
+torch
+transformers
+sentencepiece
+pandas
+accelerate
+ipykernel
+jupyter

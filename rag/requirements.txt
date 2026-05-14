@@ -1,0 +1,11 @@
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-groq
+sentence-transformers
+chromadb
+scikit-learn
+python-dotenv
+ipykernel
+jupyter
