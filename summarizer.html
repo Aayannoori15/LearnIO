@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LearnIO summarizer page for fast study-note compression.">
+    <title>LearnIO | Summarizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo-link"><div class="logo">Learn<span>IO</span></div></a>
+        <nav class="nav-links">
+            <a href="/">Home</a>
+            <a href="/summarizer-ui" class="nav-active">Summarizer</a>
+            <a href="/rag-ui">RAG Assistant</a>
+        </nav>
+        <div class="nav-actions">
+            <a href="/rag-ui" class="btn-outline">Open RAG</a>
+        </div>
+    </header>
+
+    <main class="tool-page">
+        <section class="tool-hero">
+            <div class="badge">📝 Summarizer</div>
+            <h1>Compress Long Study Material Into a Clean Summary</h1>
+            <p>Paste lectures, notes, or textbook excerpts and get a concise version you can review faster.</p>
+        </section>
+
+        <section class="summarizer-section">
+            <div class="summarizer-container glass-card-large">
+                <div class="summarizer-header">
+                    <h2>AI Text Summarizer</h2>
+                    <p>Use the root FastAPI backend to summarize large chunks of text in one step.</p>
+                </div>
+
+                <div class="summarizer-grid">
+                    <div class="input-area">
+                        <label class="panel-label" for="inputText">Study Material</label>
+                        <textarea id="inputText" placeholder="Paste your notes, article, lecture transcript, or chapter here..."></textarea>
+                    </div>
+
+                    <div class="controls">
+                        <button id="summarizeBtn" class="btn-primary btn-large w-100" type="button">
+                            <span id="btnText">Summarize Text</span>
+                            <div id="loadingSpinner" class="spinner hidden"></div>
+                        </button>
+                    </div>
+
+                    <div class="output-area">
+                        <div id="outputPlaceholder" class="placeholder-content">
+                            <div class="feature-icon">✨</div>
+                            <p>Your summary will appear here</p>
+                        </div>
+                        <div id="outputTextContainer" class="hidden">
+                            <h3>Summary</h3>
+                            <p id="outputText"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const inputText = document.getElementById('inputText');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const outputPlaceholder = document.getElementById('outputPlaceholder');
+        const outputTextContainer = document.getElementById('outputTextContainer');
+        const outputText = document.getElementById('outputText');
+
+        summarizeBtn.addEventListener('click', async () => {
+            const text = inputText.value.trim();
+            if (!text) {
+                alert('Please enter some text to summarize.');
+                return;
+            }
+
+            btnText.textContent = 'Summarizing...';
+            loadingSpinner.classList.remove('hidden');
+            summarizeBtn.disabled = true;
+
+            try {
+                const response = await fetch('/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dialogue: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                outputPlaceholder.classList.add('hidden');
+                outputTextContainer.classList.remove('hidden');
+                outputText.textContent = data.summary;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while summarizing the text. Please try again.');
+            } finally {
+                btnText.textContent = 'Summarize Text';
+                loadingSpinner.classList.add('hidden');
+                summarizeBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

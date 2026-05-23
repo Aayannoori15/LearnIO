@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+import shutil
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
 import chromadb
 from dotenv import load_dotenv
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.document_loaders.text import TextLoader
 from langchain_groq import ChatGroq
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -16,6 +18,7 @@ from sentence_transformers import SentenceTransformer
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 DATA_DIR = BASE_DIR / "data"
+UPLOAD_DIR = DATA_DIR / "uploads"
 VECTOR_DIR = DATA_DIR / "vector" / "store"
 
 load_dotenv(PROJECT_DIR / ".env")
@@ -33,6 +36,22 @@ def load_all_text(folder_path: Path = DATA_DIR):
         print(f"Loaded {file_path.name}, total docs: {len(all_docs)}")
 
     return all_docs
+
+
+def load_documents_from_file(file_path: Path):
+    suffix = file_path.suffix.lower()
+    if suffix == ".txt":
+        loader = TextLoader(str(file_path))
+    elif suffix == ".pdf":
+        loader = PyPDFLoader(str(file_path))
+    else:
+        raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
+
+    docs = loader.load()
+    for doc in docs:
+        doc.metadata["source_name"] = file_path.name
+        doc.metadata["source_path"] = str(file_path)
+    return docs
 
 
 def split_docs(documents, chunk_size: int = 500, chunk_overlap: int = 50):
@@ -76,6 +95,18 @@ class VectorStoreManager:
             self.initialize_store()
         return self.collection.count() == 0
 
+    def reset_store(self):
+        if self.client is None:
+            self.initialize_store()
+        try:
+            self.client.delete_collection(self.collection_name)
+        except Exception:
+            pass
+        self.collection = self.client.get_or_create_collection(
+            name=self.collection_name,
+            metadata={"description": "Text document retrieval store"},
+        )
+
     def add_documents(self, embeddings, documents):
         if self.collection is None:
             self.initialize_store()
@@ -107,6 +138,20 @@ class VectorStoreManager:
         )
 
 
+def save_uploaded_file(source_file, destination_name: str | None = None) -> Path:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    for existing in UPLOAD_DIR.iterdir():
+        if existing.is_file():
+            existing.unlink()
+
+    suffix = Path(source_file.filename).suffix.lower()
+    final_name = destination_name or f"active_upload{suffix}"
+    destination = UPLOAD_DIR / final_name
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(source_file.file, buffer)
+    return destination
+
+
 class RAGRetriever:
     def __init__(self, embedding_manager: EmbeddingManager, vector_store: VectorStoreManager):
         self.embedding_manager = embedding_manager
@@ -132,8 +177,10 @@ class RAGRetriever:
                 zip(ids, metadatas, docs, distances),
                 start=1,
             ):
-                similarity_score = 1 - dist
-                if similarity_score >= score_threshold:
+                # Chroma returns distance values whose range depends on the metric.
+                # Normalize distance into a stable 0..1 relevance-like score.
+                similarity_score = 1 / (1 + max(dist, 0))
+                if score_threshold <= 0 or similarity_score >= score_threshold:
                     retrieved_docs.append(
                         {
                             "id": doc_id,
@@ -147,7 +194,7 @@ class RAGRetriever:
         return retrieved_docs
 
 
-def build_llm(model: str = "llama3-70b-8192") -> ChatGroq:
+def build_llm(model: str = "llama-3.3-70b-versatile") -> ChatGroq:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise ValueError("Set GROQ_API_KEY in the project .env before creating ChatGroq")
@@ -170,7 +217,12 @@ class RAGPipeline:
 def build_pipeline() -> RAGPipeline:
     documents = load_all_text()
     if not documents:
-        raise ValueError("No .txt files found in rag/data")
+        for candidate in sorted(UPLOAD_DIR.glob("*")):
+            if candidate.is_file():
+                documents = load_documents_from_file(candidate)
+                break
+    if not documents:
+        raise ValueError("No .txt or .pdf files found for RAG. Upload a file first.")
 
     chunks = split_docs(documents)
     embedder = EmbeddingManager()
@@ -178,5 +230,18 @@ def build_pipeline() -> RAGPipeline:
     if vector_store.is_empty():
         embeddings = embedder.generate_embeddings([doc.page_content for doc in chunks])
         vector_store.add_documents(embeddings, chunks)
+    retriever = RAGRetriever(embedder, vector_store)
+    return RAGPipeline(embedder=embedder, vector_store=vector_store, retriever=retriever)
+
+
+def rebuild_pipeline_from_uploaded_file(source_file) -> RAGPipeline:
+    saved_path = save_uploaded_file(source_file)
+    documents = load_documents_from_file(saved_path)
+    chunks = split_docs(documents)
+    embedder = EmbeddingManager()
+    vector_store = VectorStoreManager()
+    vector_store.reset_store()
+    embeddings = embedder.generate_embeddings([doc.page_content for doc in chunks])
+    vector_store.add_documents(embeddings, chunks)
     retriever = RAGRetriever(embedder, vector_store)
     return RAGPipeline(embedder=embedder, vector_store=vector_store, retriever=retriever)

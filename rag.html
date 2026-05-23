@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LearnIO RAG assistant for grounded answers from your indexed notes.">
+    <title>LearnIO | RAG Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo-link"><div class="logo">Learn<span>IO</span></div></a>
+        <nav class="nav-links">
+            <a href="/">Home</a>
+            <a href="/summarizer-ui">Summarizer</a>
+            <a href="/rag-ui" class="nav-active">RAG Assistant</a>
+        </nav>
+        <div class="nav-actions">
+            <a href="/summarizer-ui" class="btn-outline">Open Summarizer</a>
+        </div>
+    </header>
+
+    <main class="tool-page">
+        <section class="tool-hero">
+            <div class="badge">🔎 RAG Assistant</div>
+            <h1>Ask Questions Against Your Indexed Documents</h1>
+            <p>Use the shared backend to retrieve relevant chunks from `rag/data/` and generate grounded answers with source inspection.</p>
+        </section>
+
+        <section class="summarizer-section">
+            <div class="summarizer-container glass-card-large">
+                <div class="summarizer-header">
+                    <h2>Document-Grounded Q&A</h2>
+                    <p>Upload one `.txt` or `.pdf` file, index it, then ask with full RAG or inspect retrieval results before generation.</p>
+                </div>
+
+                <div class="rag-layout">
+                    <div class="rag-column">
+                        <div class="upload-card">
+                            <label class="panel-label" for="ragFile">Upload a Document</label>
+                            <input id="ragFile" class="file-input" type="file" accept=".txt,.pdf">
+                            <button id="ragUploadBtn" class="btn-outline" type="button">Upload and Index</button>
+                            <p id="ragUploadStatus" class="upload-status">No uploaded document indexed yet.</p>
+                        </div>
+                        <label class="panel-label" for="ragQuery">Ask From Your Indexed Documents</label>
+                        <textarea id="ragQuery" class="rag-query" placeholder="Ask a question that should be answered from the files inside rag/data/..."></textarea>
+                        <div class="rag-controls">
+                            <button id="ragAskBtn" class="btn-primary" type="button">
+                                <span id="ragAskText">Ask with RAG</span>
+                                <div id="ragAskSpinner" class="spinner hidden"></div>
+                            </button>
+                            <button id="ragRetrieveBtn" class="btn-outline" type="button">Inspect Sources</button>
+                        </div>
+                        <div class="rag-settings">
+                            <div class="setting">
+                                <label for="topKInput">Top K</label>
+                                <input id="topKInput" type="number" min="1" max="10" value="5">
+                            </div>
+                            <div class="setting">
+                                <label for="thresholdInput">Score Threshold</label>
+                                <input id="thresholdInput" type="number" min="0" max="1" step="0.05" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rag-column">
+                        <div class="rag-response output-area">
+                            <div id="ragPlaceholder" class="placeholder-content">
+                                <div class="feature-icon">🔎</div>
+                                <p>Your grounded answer and sources will appear here</p>
+                            </div>
+                            <div id="ragAnswerContainer" class="hidden">
+                                <h3>RAG Answer</h3>
+                                <p id="ragAnswerText"></p>
+                            </div>
+                        </div>
+                        <div class="sources-card">
+                            <div class="sources-header">
+                                <h3>Sources</h3>
+                                <span id="sourcesCount" class="sources-count">0 results</span>
+                            </div>
+                            <div id="sourcesList" class="sources-list">
+                                <p class="sources-empty">Run retrieval to inspect the chunks your answer is based on.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const ragQuery = document.getElementById('ragQuery');
+        const ragFile = document.getElementById('ragFile');
+        const ragUploadBtn = document.getElementById('ragUploadBtn');
+        const ragUploadStatus = document.getElementById('ragUploadStatus');
+        const ragAskBtn = document.getElementById('ragAskBtn');
+        const ragRetrieveBtn = document.getElementById('ragRetrieveBtn');
+        const ragAskText = document.getElementById('ragAskText');
+        const ragAskSpinner = document.getElementById('ragAskSpinner');
+        const ragPlaceholder = document.getElementById('ragPlaceholder');
+        const ragAnswerContainer = document.getElementById('ragAnswerContainer');
+        const ragAnswerText = document.getElementById('ragAnswerText');
+        const sourcesList = document.getElementById('sourcesList');
+        const sourcesCount = document.getElementById('sourcesCount');
+        const topKInput = document.getElementById('topKInput');
+        const thresholdInput = document.getElementById('thresholdInput');
+
+        function getRagPayload() {
+            return {
+                query: ragQuery.value.trim(),
+                top_k: Number(topKInput.value) || 5,
+                score_threshold: Number(thresholdInput.value) || 0
+            };
+        }
+
+        function renderSources(results) {
+            sourcesCount.textContent = `${results.length} result${results.length === 1 ? '' : 's'}`;
+
+            if (!results.length) {
+                sourcesList.innerHTML = '<p class="sources-empty">No chunks matched the current query and threshold.</p>';
+                return;
+            }
+
+            sourcesList.innerHTML = results.map((item) => `
+                <article class="source-item">
+                    <div class="source-meta">
+                        <span>Rank ${item.rank}</span>
+                        <span>Score ${item.similarity_score.toFixed(3)}</span>
+                    </div>
+                    <p class="source-text">${item.document}</p>
+                </article>
+            `).join('');
+        }
+
+        ragUploadBtn.addEventListener('click', async () => {
+            const file = ragFile.files[0];
+            if (!file) {
+                alert('Please choose a .txt or .pdf file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            ragUploadBtn.disabled = true;
+            ragUploadBtn.textContent = 'Uploading...';
+            ragUploadStatus.textContent = 'Uploading and indexing document...';
+
+            try {
+                const response = await fetch('/rag/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Upload failed');
+                }
+
+                ragUploadStatus.textContent = `${data.filename} indexed successfully with ${data.chunks_indexed} chunks.`;
+                ragPlaceholder.classList.remove('hidden');
+                ragAnswerContainer.classList.add('hidden');
+                ragAnswerText.textContent = '';
+                sourcesList.innerHTML = '<p class="sources-empty">Document indexed. Ask a question or inspect retrieval to continue.</p>';
+                sourcesCount.textContent = '0 results';
+            } catch (error) {
+                console.error('Error:', error);
+                ragUploadStatus.textContent = error.message;
+                alert('An error occurred while uploading the document. Please try again.');
+            } finally {
+                ragUploadBtn.disabled = false;
+                ragUploadBtn.textContent = 'Upload and Index';
+            }
+        });
+
+        ragRetrieveBtn.addEventListener('click', async () => {
+            const payload = getRagPayload();
+            if (!payload.query) {
+                alert('Please enter a question for RAG retrieval.');
+                return;
+            }
+
+            ragRetrieveBtn.disabled = true;
+            ragRetrieveBtn.textContent = 'Inspecting...';
+
+            try {
+                const response = await fetch('/rag/retrieve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'RAG retrieval failed');
+                }
+
+                const data = await response.json();
+                ragPlaceholder.classList.add('hidden');
+                ragAnswerContainer.classList.remove('hidden');
+                ragAnswerText.textContent = 'Retrieved matching chunks successfully. Review the sources panel for exact context.';
+                renderSources(data.results || []);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while retrieving RAG sources. Please try again.');
+            } finally {
+                ragRetrieveBtn.disabled = false;
+                ragRetrieveBtn.textContent = 'Inspect Sources';
+            }
+        });
+
+        ragAskBtn.addEventListener('click', async () => {
+            const payload = getRagPayload();
+            if (!payload.query) {
+                alert('Please enter a question for the RAG assistant.');
+                return;
+            }
+
+            ragAskBtn.disabled = true;
+            ragRetrieveBtn.disabled = true;
+            ragAskText.textContent = 'Thinking...';
+            ragAskSpinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/rag/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'RAG answer generation failed');
+                }
+
+                const data = await response.json();
+                ragPlaceholder.classList.add('hidden');
+                ragAnswerContainer.classList.remove('hidden');
+                ragAnswerText.textContent = data.answer;
+                renderSources(data.sources || []);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while generating the RAG answer. Please try again.');
+            } finally {
+                ragAskBtn.disabled = false;
+                ragRetrieveBtn.disabled = false;
+                ragAskText.textContent = 'Ask with RAG';
+                ragAskSpinner.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

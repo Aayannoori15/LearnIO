@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="LearnIO - The ultimate learning platform for students. Enhance your learning experience with AI-powered tools.">
-    <title>LearnIO | Empowering Students to Achieve More</title>
+    <meta name="description" content="LearnIO helps students summarize text and ask grounded questions from indexed notes.">
+    <title>LearnIO | Home</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -12,15 +12,16 @@
 </head>
 <body>
     <header class="navbar">
-        <div class="logo">Learn<span>IO</span></div>
+        <a href="/" class="logo-link"><div class="logo">Learn<span>IO</span></div></a>
         <nav class="nav-links">
+            <a href="/" class="nav-active">Home</a>
+            <a href="/summarizer-ui">Summarizer</a>
+            <a href="/rag-ui">RAG Assistant</a>
             <a href="#features">Features</a>
-            <a href="#about">How it Works</a>
-            <a href="#testimonials">Testimonials</a>
         </nav>
         <div class="nav-actions">
-            <a href="#" class="btn-secondary">Log In</a>
-            <a href="#" class="btn-primary">Get Started</a>
+            <a href="/summarizer-ui" class="btn-secondary">Summarize</a>
+            <a href="/rag-ui" class="btn-primary">Open RAG</a>
         </div>
     </header>
 
@@ -28,60 +29,53 @@
         <section class="hero">
             <div class="hero-content">
                 <div class="badge">✨ AI-Powered Learning</div>
-                <h1>Supercharge Your <span class="gradient-text">Study Sessions</span></h1>
-                <p>LearnIO is the smart platform built for students. Summarize texts, organize notes, and master subjects faster than ever before.</p>
+                <h1>Pick the Right Tool for Your <span class="gradient-text">Study Flow</span></h1>
+                <p>Use the summarizer when you need speed. Use the RAG assistant when you need grounded answers from your indexed study material.</p>
                 <div class="hero-buttons">
-                    <a href="#" class="btn-primary btn-large">Start for Free</a>
-                    <a href="#" class="btn-outline btn-large">View Demo</a>
+                    <a href="/summarizer-ui" class="btn-primary btn-large">Open Summarizer</a>
+                    <a href="/rag-ui" class="btn-outline btn-large">Open RAG Assistant</a>
                 </div>
             </div>
             <div class="hero-image">
-                <!-- A decorative glassmorphism element instead of an image to look premium -->
-                <div class="glass-card">
+                <div class="glass-card dual-preview">
                     <div class="glass-header">
                         <span class="dot red"></span>
                         <span class="dot yellow"></span>
                         <span class="dot green"></span>
                     </div>
-                    <div class="glass-body">
-                        <div class="skeleton-line full"></div>
-                        <div class="skeleton-line medium"></div>
-                        <div class="skeleton-line short"></div>
+                    <div class="glass-body preview-grid">
+                        <div class="preview-panel">
+                            <span class="preview-tag">Summarizer</span>
+                            <div class="skeleton-line full"></div>
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line short"></div>
+                        </div>
+                        <div class="preview-panel">
+                            <span class="preview-tag">RAG</span>
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line full"></div>
+                            <div class="skeleton-line short"></div>
+                        </div>
                         <div class="glow-orb"></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="summarizer" class="summarizer-section">
-            <div class="summarizer-container glass-card-large">
-                <div class="summarizer-header">
-                    <h2>AI Text Summarizer</h2>
-                    <p>Paste your notes, articles, or text below to get an instant summary.</p>
+        <section class="features tool-split">
+            <h2>Choose Your Workflow</h2>
+            <div class="features-grid">
+                <div class="feature-card feature-spotlight">
+                    <div class="feature-icon">📝</div>
+                    <h3>Summarizer Page</h3>
+                    <p>Paste dense notes, articles, or transcripts and get a clean short version you can revise quickly.</p>
+                    <a href="/summarizer-ui" class="btn-primary">Go to Summarizer</a>
                 </div>
-                
-                <div class="summarizer-grid">
-                    <div class="input-area">
-                        <textarea id="inputText" placeholder="Enter text to summarize here..."></textarea>
-                    </div>
-                    
-                    <div class="controls">
-                        <button id="summarizeBtn" class="btn-primary btn-large w-100">
-                            <span id="btnText">Summarize Text</span>
-                            <div id="loadingSpinner" class="spinner hidden"></div>
-                        </button>
-                    </div>
-                    
-                    <div class="output-area">
-                        <div id="outputPlaceholder" class="placeholder-content">
-                            <div class="feature-icon">✨</div>
-                            <p>Your summary will appear here</p>
-                        </div>
-                        <div id="outputTextContainer" class="hidden">
-                            <h3>Summary</h3>
-                            <p id="outputText"></p>
-                        </div>
-                    </div>
+                <div class="feature-card feature-spotlight">
+                    <div class="feature-icon">🔎</div>
+                    <h3>RAG Assistant Page</h3>
+                    <p>Ask questions from your indexed files, inspect the matching chunks, and generate grounded answers with Groq.</p>
+                    <a href="/rag-ui" class="btn-outline">Go to RAG</a>
                 </div>
             </div>
         </section>
@@ -96,69 +90,16 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🧠</div>
-                    <h3>Adaptive Quizzes</h3>
-                    <p>Test your knowledge with auto-generated quizzes based on your study material.</p>
+                    <h3>Grounded RAG Answers</h3>
+                    <p>Ask questions against your indexed notes and inspect the exact source chunks used to answer.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📈</div>
-                    <h3>Track Progress</h3>
-                    <p>Visualize your learning journey and stay motivated with detailed analytics.</p>
+                    <h3>One Backend Workflow</h3>
+                    <p>Summarization and retrieval live in the same API, while the UI stays cleanly split by task.</p>
                 </div>
             </div>
         </section>
     </main>
-
-    <script>
-        const summarizeBtn = document.getElementById('summarizeBtn');
-        const inputText = document.getElementById('inputText');
-        const btnText = document.getElementById('btnText');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const outputPlaceholder = document.getElementById('outputPlaceholder');
-        const outputTextContainer = document.getElementById('outputTextContainer');
-        const outputText = document.getElementById('outputText');
-
-        summarizeBtn.addEventListener('click', async () => {
-            const text = inputText.value.trim();
-            if (!text) {
-                alert('Please enter some text to summarize.');
-                return;
-            }
-
-            // Show loading state
-            btnText.textContent = 'Summarizing...';
-            loadingSpinner.classList.remove('hidden');
-            summarizeBtn.disabled = true;
-
-            try {
-                const response = await fetch('/summarize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ dialogue: text })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await response.json();
-                
-                // Show result
-                outputPlaceholder.classList.add('hidden');
-                outputTextContainer.classList.remove('hidden');
-                outputText.textContent = data.summary;
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while summarizing the text. Please try again.');
-            } finally {
-                // Reset loading state
-                btnText.textContent = 'Summarize Text';
-                loadingSpinner.classList.add('hidden');
-                summarizeBtn.disabled = false;
-            }
-        });
-    </script>
 </body>
 </html>

@@ -3,12 +3,12 @@ import re
 from typing import Any
 
 import torch
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from rag.rag_pipeline import build_llm, build_pipeline
+from rag.rag_pipeline import build_llm, build_pipeline, rebuild_pipeline_from_uploaded_file
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 
 
@@ -114,6 +114,12 @@ def answer_with_rag(query: str, top_k: int = 5, score_threshold: float = 0.0) ->
     return {"answer": answer, "sources": retrieved_docs}
 
 
+def set_rag_pipeline_from_upload(file: UploadFile):
+    global rag_pipeline
+    rag_pipeline = rebuild_pipeline_from_uploaded_file(file)
+    return rag_pipeline
+
+
 @app.post("/summarize")
 async def summarize(dialogue_entered: DialogueInput):
     summary = summarize_dialogue(dialogue_entered.dialogue)
@@ -122,7 +128,10 @@ async def summarize(dialogue_entered: DialogueInput):
 
 @app.post("/rag/retrieve")
 async def rag_retrieve(query_input: RAGQueryInput):
-    pipeline = get_rag_pipeline()
+    try:
+        pipeline = get_rag_pipeline()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     retrieved_docs = pipeline.retriever.retrieve(
         query=query_input.query,
         top_k=query_input.top_k,
@@ -133,16 +142,51 @@ async def rag_retrieve(query_input: RAGQueryInput):
 
 @app.post("/rag/ask")
 async def rag_ask(query_input: RAGQueryInput):
-    return answer_with_rag(
-        query=query_input.query,
-        top_k=query_input.top_k,
-        score_threshold=query_input.score_threshold,
-    )
+    try:
+        return answer_with_rag(
+            query=query_input.query,
+            top_k=query_input.top_k,
+            score_threshold=query_input.score_threshold,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/rag/upload")
+async def rag_upload(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Please choose a file to upload.")
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in {".txt", ".pdf"}:
+        raise HTTPException(status_code=400, detail="Only .txt and .pdf files are supported.")
+
+    try:
+        pipeline = set_rag_pipeline_from_upload(file)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    chunk_count = pipeline.vector_store.collection.count()
+    return {
+        "message": f"Indexed {file.filename} successfully.",
+        "filename": file.filename,
+        "chunks_indexed": chunk_count,
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(request=request, name="home.html")
+
+
+@app.get("/summarizer-ui", response_class=HTMLResponse)
+async def summarizer_ui(request: Request):
+    return templates.TemplateResponse(request=request, name="summarizer.html")
+
+
+@app.get("/rag-ui", response_class=HTMLResponse)
+async def rag_ui(request: Request):
+    return templates.TemplateResponse(request=request, name="rag.html")
 
 
     

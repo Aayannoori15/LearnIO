@@ -16,5 +16,7 @@ sentence-transformers
 chromadb
 scikit-learn
 python-dotenv
+python-multipart
+pypdf
 ipykernel
 jupyter
