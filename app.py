@@ -10,6 +10,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from rag.rag_pipeline import build_llm, build_pipeline, rebuild_pipeline_from_uploaded_file
 from transformers import T5ForConditionalGeneration, T5Tokenizer
+from groqapi import get_response
+
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -46,6 +48,10 @@ class RAGQueryInput(BaseModel):
     query: str
     top_k: int = 5
     score_threshold: float = 0.0
+
+
+class GroqInput(BaseModel):
+    message: str
 
 
 def get_rag_pipeline():
@@ -86,6 +92,7 @@ def summarize_dialogue(dialogue: str) -> str:
         early_stopping=True,
     )
     return tokenizer.decode(targets[0], skip_special_tokens=True)
+
 
 
 def answer_with_rag(query: str, top_k: int = 5, score_threshold: float = 0.0) -> dict[str, Any]:
@@ -152,6 +159,15 @@ async def rag_ask(query_input: RAGQueryInput):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/groq/chat")
+async def groq_chat(groq_input: GroqInput):
+    try:
+        response = get_response(groq_input.message)
+        return {"response": response}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.post("/rag/upload")
 async def rag_upload(file: UploadFile = File(...)):
     if not file.filename:
@@ -189,4 +205,6 @@ async def rag_ui(request: Request):
     return templates.TemplateResponse(request=request, name="rag.html")
 
 
-    
+@app.get("/groq-chat-ui", response_class=HTMLResponse)
+async def groq_chat_ui(request: Request):
+    return templates.TemplateResponse(request=request, name="groq-chat.html")
